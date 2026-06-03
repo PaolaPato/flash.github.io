@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards CBTIS 2026</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #1e40af;
+        }
+
+        .category-selector {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .cat-btn {
+            background: #f3f4f6;
+            border: 2px solid #e5e7eb;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .cat-btn:hover, .cat-btn.active {
+            background: #1e40af;
+            color: white;
+            border-color: #1e40af;
+        }
+
+        .flashcard-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            margin: 0 auto;
+        }
+
+        .flashcard {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            text-align: center;
+            font-size: 1.3rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .card-label {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e40af;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            background: white;
+            border-radius: 15px;
+            padding: 15px 30px;
+            margin-top: 20px;
+            text-align: center;
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e40af;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            background: #e5e7eb;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 15px 0;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #1e40af, #3b82f6);
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+
+        @media (max-width: 600px) {
+            .flashcard-container {
+                height: 250px;
+            }
+            .card-face {
+                font-size: 1.1rem;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎴 Flashcards CBTIS 2026</h1>
+            <p id="totalCount">108 tarjetas de estudio basadas en la guía oficial</p>
+        </div>
+
+        <div class="category-selector" id="categorySelector"></div>
+
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="card-face card-front">
+                    <span class="card-label">Pregunta</span>
+                    <div id="cardFront">Cargando...</div>
+                </div>
+                <div class="card-face card-back">
+                    <span class="card-label">Respuesta</span>
+                    <div id="cardBack">Respuesta</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="prevCard()">⬅ Anterior</button>
+            <button class="btn" onclick="shuffleCards()">🔀 Mezclar</button>
+            <button class="btn" onclick="nextCard()">Siguiente ➡</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="currentNum">0</div>
+                <div class="stat-label">Tarjeta actual</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalNum">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            📌 Haz clic en la tarjeta para voltear | Usa las flechas del teclado ← → | Presiona ESPACIO para voltear
+        </div>
+    </div>
+
+    <script>
+        const flashcardsData = {
+            "ciencias": [
+                {q: "¿Qué es la materia?", a: "Todo aquello que tiene masa y volumen, es decir, que ocupa un lugar en el espacio."},
+                {q: "¿Qué es un elemento químico?", a: "Sustancia pura constituida por una sola clase de átomos. Se representan con símbolos químicos (1-2 letras, primera mayúscula)."},
+                {q: "¿Qué es un compuesto químico?", a: "Sustancia pura constituida por más de una clase de átomos. Se representan mediante fórmulas químicas (ej: H₂O, NaCl)."},
+                {q: "¿Qué es una mezcla homogénea?", a: "Mezcla donde los componentes no se distinguen a simple vista, están distribuidos uniformemente (ej: refresco, aire)."},
+                {q: "¿Qué es una mezcla heterogénea?", a: "Mezcla donde los componentes se pueden distinguir a simple vista (ej: ensalada, agua con arena, pizza)."},
+                {q: "¿Cuál es el símbolo del oro y su origen?", a: "Au - viene de 'Aurum' en latín."},
+                {q: "¿Cuál es el símbolo de la plata y su origen?", a: "Ag - viene de 'Argentum' en latín."},
+                {q: "¿Cuál es el símbolo del hierro y su origen?", a: "Fe - viene de 'Ferrum' en latín."},
+                {q: "¿Cuál es el símbolo del cobre y su origen?", a: "Cu - viene de 'Cuprum' en latín/griego."},
+                {q: "¿Cuál es el símbolo del sodio y su origen?", a: "Na - viene de 'Natrium' en árabe/latín."},
+                {q: "¿Cuál es el símbolo del potasio y su origen?", a: "K - viene de 'Kalium' en árabe."},
+                {q: "¿Qué tipo de sustancia es el agua (H₂O)?", a: "Es un COMPUESTO (dos tipos de átomos: hidrógeno y oxígeno)."},
+                {q: "¿Qué tipo de sustancia es el ozono (O₃)?", a: "Es un ELEMENTO (solo un tipo de átomo: oxígeno)."},
+                {q: "¿Qué tipo de sustancia es la sal de mesa (NaCl)?", a: "Es un COMPUESTO binario (sodio y cloro)."},
+                {q: "¿Qué es una propiedad extensiva?", a: "Propiedad que DEPENDE de la cantidad de materia (ej: masa, volumen, peso)."},
+                {q: "¿Qué es una propiedad intensiva?", a: "Propiedad que NO depende de la cantidad de materia, sino de su naturaleza (ej: densidad, temperatura, punto de ebullición, punto de fusión)."},
+                {q: "¿Cuál es la fórmula de la densidad?", a: "ρ = m/V (densidad = masa entre volumen)"},
+                {q: "¿Cuál es la fórmula del peso?", a: "P = m × g (peso = masa por gravedad; g ≈ 9.8 m/s² en la Tierra)"},
+                {q: "¿Cuál es la diferencia entre masa y peso?", a: "La masa es invariable (misma en cualquier planeta), el peso depende de la gravedad y varía según el lugar."},
+                {q: "¿Qué es el punto de ebullición?", a: "Temperatura a la que un cuerpo pasa del estado líquido al gaseoso."},
+                {q: "¿Qué es el punto de fusión?", a: "Temperatura a la que un cuerpo pasa del estado sólido al líquido."},
+                {q: "¿Quién publicó la primera tabla periódica en 1869?", a: "Dmitri Mendeléyev, organizando 63 elementos según masa atómica y propiedades."},
+                {q: "¿Quién descubrió el concepto de número atómico en 1915?", a: "Henry Moseley, mediante espectroscopía de rayos X."},
+                {q: "¿Qué información da el número atómico?", a: "El número de PROTONES en el núcleo de un átomo."},
+                {q: "Elementos conocidos aprox.", a: "118 elementos en la tabla periódica actual"}
+            ],
+            "matematicas": [
+                {q: "¿Qué significa PEMDAS?", a: "Orden de operaciones: Paréntesis, Exponentes, Multiplicación/División, Adición/Sustracción."},
+                {q: "En 3 + 4 × 2, ¿qué se resuelve primero?", a: "La multiplicación (4 × 2 = 8), luego la suma. Resultado: 11, NO 14."},
+                {q: "¿Cuánto es (-5) + (-3)?", a: "-8 (sumar negativos: se suman los valores y se mantiene el signo negativo)."},
+                {q: "¿Cuánto es (-12) ÷ (-3)?", a: "4 (división de negativos: resultado positivo)."},
+                {q: "¿Cuánto es (-4) × (3)?", a: "-12 (multiplicación con un negativo: resultado negativo)."},
+                {q: "¿Cuánto es (-15) - (-7)?", a: "-8 (menos menos = más, entonces -15 + 7 = -8)."},
+                {q: "¿Qué es el valor absoluto de |-8|?", a: "8 (el valor absoluto es siempre positivo, es la distancia desde cero)."},
+                {q: "¿Cuánto es 2³ (2 al cubo)?", a: "8 (2 × 2 × 2 = 8)."},
+                {q: "¿Cuánto es 3⁴ (3 a la cuarta)?", a: "81 (3 × 3 × 3 × 3 = 81)."},
+                {q: "¿Cuánto es 10²?", a: "100 (10 × 10 = 100)."},
+                {q: "¿Cómo se calcula el 25% de 80?", a: "0.25 × 80 = 20, o (80 ÷ 4) = 20."},
+                {q: "Si 30 es el 20% de un número, ¿cuál es el número?", a: "150 (30 × 100 ÷ 20 = 150, o 30 × 5 = 150)."},
+                {q: "¿Qué porcentaje representa 15 de 60?", a: "25% (15 ÷ 60 × 100 = 25)."},
+                {q: "¿Cómo se calcula un descuento?", a: "Precio × (Porcentaje de descuento ÷ 100) = Monto de descuento."},
+                {q: "Un artículo de $200 tiene 15% de descuento. ¿Cuánto se paga?", a: "$170 ($200 - $30 = $170; el descuento es $200 × 0.15 = $30)."},
+                {q: "¿Qué es una proporción?", a: "Igualdad entre dos razones o fracciones (ej: 3/9 = 1/3)."},
+                {q: "Si 5 kg cuestan $45, ¿cuánto cuestan 8 kg?", a: "$72 (45 ÷ 5 = 9 por kg; 9 × 8 = 72)."},
+                {q: "¿Qué fracción equivale al 50%?", a: "1/2 (uno medio)."},
+                {q: "¿Qué fracción equivale al 25%?", a: "1/4 (un cuarto)."},
+                {q: "¿Qué fracción equivale al 75%?", a: "3/4 (tres cuartos)."},
+                {q: "Distancia = Velocidad × ...", a: "Tiempo (d = v × t)."},
+                {q: "Velocidad = Distancia ÷ ...", a: "Tiempo (v = d ÷ t)."},
+                {q: "Si un auto viaja a 80 km/h durante 2.5 horas, ¿qué distancia recorre?", a: "200 km (80 × 2.5 = 200)."}
+            ],
+            "sociales": [
+                {q: "¿Qué es un proceso productivo?", a: "Conjunto de actividades para transformar recursos en bienes y servicios que satisfacen necesidades humanas."},
+                {q: "¿Cuáles son los tres factores de producción básicos?", a: "Tierra (recursos naturales), Trabajo (mano de obra), Capital (maquinaria, dinero, infraestructura)."},
+                {q: "¿Qué es el sector primario de la economía?", a: "Actividades de extracción de recursos naturales: agricultura, ganadería, pesca, minería."},
+                {q: "¿Qué es el sector secundario de la economía?", a: "Actividades de transformación de materias primas: industria manufacturera, construcción."},
+                {q: "¿Qué es el sector terciario de la economía?", a: "Actividades de servicios: comercio, educación, salud, turismo, transporte."},
+                {q: "¿A qué sector pertenece la agricultura?", a: "Sector PRIMARIO (extracción de recursos naturales)."},
+                {q: "¿A qué sector pertenece la industria automotriz?", a: "Sector SECUNDARIO (transformación industrial)."},
+                {q: "¿A qué sector pertenece la educación?", a: "Sector TERCIARIO (servicios)."},
+                {q: "¿Qué es el patrimonio cultural?", a: "Herencia histórica y cultural que incluye tradiciones, idiomas, monumentos, artesanías, gastronomía, conocimientos."},
+                {q: "¿Qué es una manifestación cultural inmaterial?", a: "Expresiones culturales intangibles: fiestas, danzas, música, tradiciones orales, conocimientos."},
+                {q: "¿Qué civilización desarrolló el sistema de escritura jeroglífica en México?", a: "Los MAYAS."},
+                {q: "Menciona tres aportaciones de los pueblos originarios al patrimonio de México.", a: "1) Lenguas (náhuatl, maya, etc.) 2) Artes (cerámica, textiles) 3) Conocimientos (medicina, agricultura) 4) Gastronomía (maíz, chile, cacao)."},
+                {q: "¿Qué artículo de la Constitución Mexicana establece los derechos humanos?", a: "ARTÍCULO 1º."},
+                {q: "¿Qué es la dignidad humana?", a: "Valor intrínseco e inherente de toda persona por el hecho de ser humana, independientemente de condiciones."},
+                {q: "¿Qué es la igualdad en derechos humanos?", a: "Principio de que todas las personas tienen los mismos derechos y oportunidades sin discriminación."},
+                {q: "¿Qué es la no discriminación?", a: "Principio de tratar a todas las personas con igualdad, sin distinción negativa por raza, género, religión, condición social, etc."},
+                {q: "¿Qué es la autonomía personal?", a: "Capacidad de tomar propias decisiones con responsabilidad y libertad."},
+                {q: "¿Qué es la libertad?", a: "Facultad de actuar dentro de límites legales y éticos, sin coacción, respetando derechos de otros."}
+            ],
+            "lenguaje": [
+                {q: "¿Qué es una metáfora?", a: "Figura retórica que identifica un término con otro (A es B), sin usar 'como' o 'parece'. Ej: 'Tus ojos son estrellas'."},
+                {q: "¿Qué es una comparación (o símil)?", a: "Figura retórica que relaciona dos términos usando conectores como 'como', 'parece', 'se asemeja a'. Ej: 'Tus ojos son COMO estrellas'."},
+                {q: "¿Qué es la personificación?", a: "Figura que atribuye cualidades humanas a seres no humanos (animales, objetos, ideas). Ej: 'El viento susurraba entre los árboles'."},
+                {q: "¿Qué es la hipérbole?", a: "Exageración deliberada para enfatizar algo. Ej: 'Te he dicho mil veces', 'Muero de hambre'."},
+                {q: "¿Qué es la elipsis?", a: "Omisión de elementos que se sobreentienden por el contexto. Ej: En respuesta '¿Vienes?' → 'Mañana' (se omite 'Vengo')."},
+                {q: "¿Qué caracteriza a un texto literario?", a: "Uso creativo del lenguaje, función estética, recursos literarios, subjetividad, intención artística."},
+                {q: "¿Qué caracteriza a un texto informativo?", a: "Función referencial, datos objetivos, lenguaje claro, estructura organizada, intención de informar."},
+                {q: "¿Qué es la denotación?", a: "Significado literal o de diccionario de una palabra."},
+                {q: "¿Qué es la connotación?", a: "Significado subjetivo, emocional o cultural que se asocia a una palabra más allá de su definición."},
+                {q: "¿Qué es un sinónimo?", a: "Palabra con significado similar o igual a otra."},
+                {q: "¿Qué es un antónimo?", a: "Palabra con significado opuesto a otra."},
+                {q: "¿Qué es la coherencia textual?", a: "Conexión lógica y consistente de las ideas en un texto; el texto tiene sentido global."},
+                {q: "¿Qué es la cohesión textual?", a: "Conexiones gramaticales y léxicas que vinculan oraciones (conectores, pronombres, repetición)."},
+                {q: "¿Qué es la inferencia en lectura?", a: "Deducción de información no explícita en el texto a partir de pistas contextuales."},
+                {q: "¿Qué es la idea principal de un texto?", a: "El mensaje central o tema fundamental que el autor quiere comunicar."},
+                {q: "¿Qué es un texto narrativo?", a: "Texto que cuenta una historia o serie de eventos (personajes, espacio, tiempo, acción)."},
+                {q: "¿Qué es un texto expositivo?", a: "Texto que informa, explica o describe un tema de forma objetiva."},
+                {q: "¿Qué es la ambigüedad en un texto?", a: "Posibilidad de múltiples interpretaciones debido a expresiones poco claras o palabras con varios significados."},
+                {q: "¿Qué es el contexto de una palabra?", a: "Situación o texto que rodea a una palabra y ayuda a determinar su significado preciso."},
+                {q: "¿Qué es un argumento?", a: "Razonamiento o conjunto de razones que se utilizan para apoyar o defender una opinión o idea."}
+            ],
+            "pensamiento": [
+                {q: "¿Qué es un dilema ético?", a: "Situación donde entran en conflicto dos o más valores morales, y no hay una solución obviamente correcta."},
+                {q: "¿Cuáles son los pasos para resolver un dilema ético?", a: "1) Identificar el conflicto de valores 2) Reconocer opciones 3) Analizar consecuencias 4) Decidir y justificar 5) Reflexionar."},
+                {q: "¿Qué es la empatía?", a: "Capacidad de comprender y compartir los sentimientos de otra persona, ponerse en su lugar."},
+                {q: "¿Qué es la asertividad?", a: "Habilidad de expresar ideas, sentimientos y necesidades de forma directa, honesta y respetuosa."},
+                {q: "¿Qué es la tolerancia?", a: "Respeto y aceptación de diferencias (opiniones, creencias, estilos de vida) con límites éticos."},
+                {q: "¿Qué es el diálogo?", a: "Intercambio de ideas entre personas para entenderse, resolver conflictos o tomar decisiones juntos."},
+                {q: "¿Qué es la inteligencia emocional?", a: "Capacidad de reconocer, comprender y gestionar propias emociones y las de otros."},
+                {q: "¿Qué es el pensamiento crítico?", a: "Capacidad de analizar, evaluar y sintetizar información de forma objetiva para formar juicios racionales."},
+                {q: "¿Qué es un valor?", a: "Principio o cualidad considerado deseable o importante que guía comportamiento y decisiones."},
+                {q: "¿Qué son valores en conflicto?", a: "Situación donde dos o más valores importantes entran en contradicción (ej: verdad vs. amistad, libertad vs. seguridad)."},
+                {q: "¿Qué es la autonomía?", a: "Capacidad de gobernarse a sí mismo, tomar decisiones propias con responsabilidad."},
+                {q: "¿Qué es la dignidad humana?", a: "Valor inherente de toda persona por ser humana, que merece respeto y no puede ser violado."},
+                {q: "¿Qué es un conflicto?", a: "Situación donde dos o más personas tienen intereses, opiniones o valores opuestos."},
+                {q: "¿Qué es la resolución pacífica de conflictos?", a: "Solución de desacuerdos mediante diálogo, negociación y respeto, sin violencia ni coerción."},
+                {q: "¿Qué fomenta la convivencia positiva?", a: "Intereses en común, comunicación asertiva, respeto mutuo, empatía, valores compartidos."},
+                {q: "¿Qué es la toma de decisiones informada?", a: "Proceso de elegir entre alternativas considerando información relevante, valores y consecuencias."},
+                {q: "¿Qué es la responsabilidad?", a: "Obligación de responder por actos y decisiones, asumir consecuencias y cumplir compromisos."},
+                {q: "¿Qué es la justicia?", a: "Principio moral que exige dar a cada persona lo que le corresponde según sus derechos y méritos."},
+                {q: "¿Qué es la solidaridad?", a: "Adhesión a la causa o intereses de otros, colaboración y apoyo mutuo."},
+                {q: "¿Qué es la inclusión?", a: "Principio de garantizar participación y acceso a todas las personas, sin exclusión por diferencias."},
+                {q: "¿Qué es la honestidad?", a: "Cualidad de actuar con verdad, sinceridad y transparencia en las acciones y relaciones."},
+                {q: "¿Qué es el respeto?", a: "Consideración y valoración de la dignidad de las personas, sus ideas y derechos."}
+            ]
+        };
+
+        const categoryCounts = {
+            ciencias: flashcardsData.ciencias.length,
+            matematicas: flashcardsData.matematicas.length,
+            sociales: flashcardsData.sociales.length,
+            lenguaje: flashcardsData.lenguaje.length,
+            pensamiento: flashcardsData.pensamiento.length
+        };
+
+        let currentCards = [];
+        let currentIndex = 0;
+        let currentCategory = 'todas';
+
+        function init() {
+            renderCategories();
+            loadCards('todas');
+            setupKeyboard();
+        }
+
+        function renderCategories() {
+            const total = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
+            const categories = [
+                {id: 'todas', name: `📚 Todas (${total})`},
+                {id: 'ciencias', name: `🔬 Ciencias (${categoryCounts.ciencias})`},
+                {id: 'matematicas', name: `📐 Matemáticas (${categoryCounts.matematicas})`},
+                {id: 'sociales', name: `🌎 Sociales (${categoryCounts.sociales})`},
+                {id: 'lenguaje', name: `📖 Lenguaje (${categoryCounts.lenguaje})`},
+                {id: 'pensamiento', name: `🧠 Pensamiento (${categoryCounts.pensamiento})`}
+            ];
+
+            const container = document.getElementById('categorySelector');
+            container.innerHTML = categories.map(cat =>
+                '<button class="cat-btn" onclick="selectCategory(\'' + cat.id + '\')">' + cat.name + '</button>'
+            ).join('');
+        }
+
+        function selectCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadCards(cat);
+        }
+
+        function loadCards(category) {
+            if (category === 'todas') {
+                currentCards = [
+                    ...flashcardsData.ciencias,
+                    ...flashcardsData.matematicas,
+                    ...flashcardsData.sociales,
+                    ...flashcardsData.lenguaje,
+                    ...flashcardsData.pensamiento
+                ];
+            } else {
+                currentCards = flashcardsData[category] || [];
+            }
+            currentIndex = 0;
+            updateCard();
+        }
+
+        function updateCard() {
+            if (currentCards.length === 0) return;
+
+            const card = currentCards[currentIndex];
+            document.getElementById('cardFront').textContent = card.q;
+            document.getElementById('cardBack').textContent = card.a;
+            document.getElementById('currentNum').textContent = currentIndex + 1;
+            document.getElementById('totalNum').textContent = currentCards.length;
+
+            const progress = ((currentIndex + 1) / currentCards.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            // Reset flip state
+            document.getElementById('flashcard').classList.remove('flipped');
+        }
+
+        function flipCard() {
+            document.getElementById('flashcard').classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            if (currentIndex < currentCards.length - 1) {
+                currentIndex++;
+                updateCard();
+            }
+        }
+
+        function prevCard() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCard();
+            }
+        }
+
+        function shuffleCards() {
+            for (let i = currentCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentCards[i], currentCards[j]] = [currentCards[j], currentCards[i]];
+            }
+            currentIndex = 0;
+            updateCard();
+        }
+
+        function setupKeyboard() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') prevCard();
+                if (e.key === 'ArrowRight') nextCard();
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    flipCard();
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
